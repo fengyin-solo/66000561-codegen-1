@@ -12,6 +12,8 @@
           <el-option value="fifo" label="FIFO"/><el-option value="priority" label="优先级"/><el-option value="max_concurrent" label="最大并发"/>
         </el-select>
         <el-button type="success" size="small" @click="run" :disabled="!store.workflow" :loading="store.loading">▶ 执行</el-button>
+        <el-button type="warning" size="small" plain @click="stopLive" :disabled="!qaStore.liveRunId">■ 中断</el-button>
+        <el-button size="small" @click="qaStore.setDrawer(true)">📊 质量概览</el-button>
         <span class="ws-dot" :class="{on:store.wsConnected}"></span>
       </div>
     </header>
@@ -24,6 +26,8 @@
         <CircuitBreakerPanel />
       </div>
     </div>
+    <!-- 每次执行的质量概览（独立抽屉，不影响实时明细与画布节点） -->
+    <QualityOverview />
   </div>
 </template>
 
@@ -32,13 +36,20 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import DAGCanvas from './components/DAGCanvas.vue'
 import LogPanel from './components/LogPanel.vue'
 import CircuitBreakerPanel from './components/CircuitBreakerPanel.vue'
+import QualityOverview from './components/QualityOverview.vue'
 import { useDAGStore } from './store/dag'
+import { useQualityStore } from './store/quality'
+import axios from 'axios'
 const store = useDAGStore()
+const qaStore = useQualityStore()
 const wfName = ref('data-pipeline')
 function create() { store.createWorkflow(wfName.value) }
 function run() { store.run() }
-onMounted(() => store.connectWS())
-onUnmounted(() => store.disconnectWS())
+async function stopLive() {
+  if (qaStore.liveRunId != null) await axios.post(`/api/runs/${qaStore.liveRunId}/stop`)
+}
+onMounted(() => { store.connectWS(); qaStore.init() })
+onUnmounted(() => { store.disconnectWS(); qaStore.disconnectWS() })
 </script>
 
 <style>
