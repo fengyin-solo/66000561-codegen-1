@@ -234,3 +234,8 @@ sandbox/
 *.pid
 *.seed
 *.pid.lock
+
+# Local runtime artifacts (see quality overview feature)
+backend/.pylibs311/
+backend/data/
+frontend/dist/
